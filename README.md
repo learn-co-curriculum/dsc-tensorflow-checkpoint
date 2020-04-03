@@ -1,96 +1,103 @@
 # Neural Network Regularization
 
+This assessment covers building and training a `tf.keras` `Sequential` model, then applying regularization.  The dataset comes from a ["don't overfit" Kaggle competition](https://www.kaggle.com/c/dont-overfit-ii).  There are 300 features labeled 0-299, and a target called "target".  There are only 250 records total, meaning this is a very small dataset to be used with a neural network. 
+
+_You can assume that the dataset has already been scaled._
+
 
 ```python
-# scikit-learn imports
+# Run this cell without changes
+
 import numpy as np
 import pandas as pd
-from matplotlib import pyplot
-from sklearn.datasets import make_gaussian_quantiles, make_circles
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-# neural network imports
 import tensorflow as tf
-from tensorflow import keras
 from tensorflow.keras import Sequential, regularizers
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.initializers import RandomNormal
+from tensorflow.keras.layers import Dense, Dropout
 tf.logging.set_verbosity(tf.logging.ERROR)
 ```
 
-You're going to train full neural networks on a _small_ set of generated data. It is a binary classification problem in which you need to identify whether a dot will belong to the teal or orange class.
+In the cells below, the set of data has been split into a training and testing set and then fit to a neural network with two hidden layers. Run the cells below to see how well the model performs.
 
 
 ```python
-# generate 2d classification dataset
-X, y = make_circles(n_samples=450, noise=0.12)
-df = pd.DataFrame(dict(x=X[:,0], y=X[:,1], label=y))
+# Run this cell without changes
 
-# plot the generated dataset
-colors = {0:'teal', 1:'orange'}
-fig, ax = pyplot.subplots()
-grouped = df.groupby('label')
-for key, group in grouped:
-    if key != 2:
-        group.plot(ax=ax, kind='scatter', x='x', y='y', label=key, color=colors[key])
-pyplot.show()
-```
+df = pd.read_csv("data.csv")
+df.drop("id", axis=1, inplace=True)
 
-In the two cells below, the set of data has been split into a training and testing set and then fit to a neural network with two hidden layers. Run the two cells below to see how well the model performs.
+X = df.drop("target", axis=1)
+y = df["target"]
 
-
-```python
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2020)
+X_train.shape
 ```
 
 
 ```python
-# CREATE CLASSIFIER
-classifier = Sequential()
+# Run this cell without changes
 
-# add hidden layer
-classifier.add(Dense(
-    32, 
-    activation='relu', 
-    input_dim=2,
-    kernel_initializer='random_normal',
-))
+def build_model():
+    """
+    Creates and compiles a tf.keras Sequential model with two hidden layers
+    """
+    # create classifier
+    classifier = Sequential()
 
-# add hidden layer
-classifier.add(Dense(
-    32,
-    activation='relu', 
-    input_dim=2,
-    kernel_initializer='random_normal',
-))
+    # add input layer (shape is 300 because X has 300 features)
+    classifier.add(Dense(units=64, input_shape=(300,)))
 
-# add output layer
-classifier.add(Dense(
-    1, 
-    activation='sigmoid',
-    kernel_initializer='random_uniform',
-))
+    # add hidden layers
+    classifier.add(Dense(units=64))
+    classifier.add(Dense(units=64))
 
-classifier.compile(optimizer ='adam',loss="binary_crossentropy",metrics =['accuracy'])
+    # add output layer
+    classifier.add(Dense(units=1, activation='sigmoid'))
 
-# TRAIN
-classifier.fit(X_train, y_train, epochs=25, verbose=0, batch_size=10, shuffle=False)
-predicted_vals_train = classifier.predict_classes(X_train)
-print("Accuracy on training data:")
-print(accuracy_score(y_train,predicted_vals_train))
-
-# TEST
-predicted_vals_test = classifier.predict_classes(X_test)
-print("Accuracy on test data:")
-print(accuracy_score(y_test,predicted_vals_test))
+    classifier.compile(optimizer='adam', loss="binary_crossentropy", metrics=['accuracy'])
+    return classifier
 ```
 
-##### 1) Modify the code below to use L2 regularization
+
+```python
+# Run this cell without changes
+
+def fit_and_cross_validate_model(model_func, X, y):
+    """
+    Given a function that builds a model and training X and y, validate the model based on
+    cross-validated train and test data
+    """
+    train_scores = []
+    test_scores = []
+    for seed in [1,2,3,4,5]:
+        print(f"######################## Training cross-validated model {seed} ###########################")
+        X_train_cv, X_test_cv, y_train_cv, y_test_cv = \
+            train_test_split(X, y, random_state=seed)
+        classifier = model_func()    
+        classifier.fit(X_train_cv, y_train_cv, epochs=5, verbose=1, batch_size=50, shuffle=False)
+        train_scores.append(accuracy_score(y_train_cv, classifier.predict_classes(X_train_cv)))
+        test_scores.append(accuracy_score(y_test_cv, classifier.predict_classes(X_test_cv)))
+    print("############################## Model evaluation #####################################")
+    print("Approximate training accuracy:")
+    print(np.mean(train_scores), "+/-", np.std(train_scores))
+    print("Approximate testing accuracy:")
+    print(np.mean(test_scores), "+/-", np.std(test_scores))
+    return train_scores, test_scores
+```
 
 
-The model appears to be overfitting. To deal with this overfitting, modify the code below to include L2 regularization in the model. 
+```python
+# Run this cell without changes
+
+fit_and_cross_validate_model(build_model, X_train, y_train);
+```
+
+## 1) Modify the code below to use regularization
+
+
+The model appears to be overfitting. To deal with this overfitting, modify the code below to include regularization in the model. You can add L1, L2, both L1 and L2, or dropout regularization.
 
 Hint: these might be helpful
 
@@ -99,54 +106,57 @@ Hint: these might be helpful
 
 
 ```python
-# CREATE CLASSIFIER
-classifier2 = Sequential()
+def build_model_with_regularization():
+    """
+    Creates and compiles a tf.keras Sequential model with two hidden layers
+    This time regularization has been added
+    """
+    # create classifier
+    classifier = Sequential()
 
-# add hidden layer
-classifier2.add(Dense(
-    32, 
-    activation='relu', 
-    input_dim=2,
-    kernel_initializer='random_normal'
+    # add input layer
+    classifier.add(Dense(units=64, input_shape=(300,)))
 
-))
+    # add hidden layers
+    
+    # YOUR CODE HERE
 
-# add hidden layer
-classifier2.add(Dense(
-    32,
-    activation='relu', 
-    input_dim=2,
-    kernel_initializer='random_normal'
+    # add output layer
+    classifier.add(Dense(units=1, activation='sigmoid'))
 
-))
-
-# add output layer
-classifier2.add(Dense(
-    1, 
-    activation='sigmoid',
-    kernel_initializer='random_uniform',
-))
-
-classifier2.compile(optimizer ='adam',loss="binary_crossentropy",metrics =['accuracy'])
-
-# TRAIN
-classifier2.fit(X_train, y_train, epochs=25, verbose=0, batch_size=10, shuffle=False)
-predicted_vals_train = classifier2.predict_classes(X_train)
-print("Accuracy on training data:")
-print(accuracy_score(y_train,predicted_vals_train))
-
-# TEST
-predicted_vals_test = classifier2.predict_classes(X_test)
-print("Accuracy on test data:")
-print(accuracy_score(y_test,predicted_vals_test))
+    classifier.compile(optimizer='adam', loss="binary_crossentropy", metrics=['accuracy'])
+    return classifier
 
 ```
 
-Did the regularization you performed prevent overfitting?
+
+```python
+# Run this cell without changes
+
+fit_and_cross_validate_model(build_model_with_regularization, X_train, y_train);
+```
+
+### Based on the cross-validated scores, did the regularization you performed help prevent overfitting? Is the first or the second model better?
 
 
 ```python
-# Your answer here
+# Your written answer here
+```
+
+### Now, evaluate both models on the holdout set
+
+
+```python
+# Run this cell without changes
+
+classifier_1 = build_model()
+classifier_1.fit(X_train, y_train, epochs=5, verbose=1, batch_size=50, shuffle=False)
+
+classifier_2 = build_model_with_regularization()
+classifier_2.fit(X_train, y_train, epochs=5, verbose=1, batch_size=50, shuffle=False)
+
+print("Accuracy score without regularization:", accuracy_score(y_test, classifier_1.predict_classes(X_test)))
+print("Accuracy score with regularization:", accuracy_score(y_test, classifier_2.predict_classes(X_test)))
 ```
 
 ### 2) Explain how regularization is related to the bias/variance tradeoff within Neural Networks and how it's related to the results you just achieved in the training and test accuracies of the previous models. What does regularization change in the training process (be specific to what is being regularized and how it is regularizing)?
