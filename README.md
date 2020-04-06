@@ -11,11 +11,12 @@ _You can assume that the dataset has already been scaled._
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 
 import tensorflow as tf
 from tensorflow.keras import Sequential, regularizers
 from tensorflow.keras.layers import Dense, Dropout
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 tf.logging.set_verbosity(tf.logging.ERROR)
 ```
 
@@ -69,22 +70,21 @@ def fit_and_cross_validate_model(model_func, X, y):
     Given a function that builds a model and training X and y, validate the model based on
     cross-validated train and test data
     """
-    train_scores = []
-    test_scores = []
-    for seed in [1,2,3,4,5]:
-        print(f"######################## Training cross-validated model {seed} ###########################")
-        X_train_cv, X_test_cv, y_train_cv, y_test_cv = \
-            train_test_split(X, y, random_state=seed)
-        classifier = model_func()    
-        classifier.fit(X_train_cv, y_train_cv, epochs=5, verbose=1, batch_size=50, shuffle=False)
-        train_scores.append(accuracy_score(y_train_cv, classifier.predict_classes(X_train_cv)))
-        test_scores.append(accuracy_score(y_test_cv, classifier.predict_classes(X_test_cv)))
-    print("############################## Model evaluation #####################################")
+    keras_classifier = KerasClassifier(build_model, epochs=5, batch_size=50, verbose=1, shuffle=False)
+    
+    print("######################## Training cross-validated models ###########################")
+    cross_val_scores = cross_val_score(keras_classifier, X, y, cv=5)
+    
+    print("########################### Training on full X_train ###############################")
+    keras_classifier.fit(X, y)
+    
+    print("############################### Evaluation report ##################################")
+    
     print("Approximate training accuracy:")
-    print(np.mean(train_scores), "+/-", np.std(train_scores))
+    print(accuracy_score(y, keras_classifier.predict(X)))
+    
     print("Approximate testing accuracy:")
-    print(np.mean(test_scores), "+/-", np.std(test_scores))
-    return train_scores, test_scores
+    print(np.mean(cross_val_scores), "+/-", np.std(cross_val_scores))
 ```
 
 
