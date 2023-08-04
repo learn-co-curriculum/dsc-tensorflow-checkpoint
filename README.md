@@ -4,7 +4,7 @@ This assessment covers building and training a `tf.keras` `Sequential` model, th
 
 _You can assume that the dataset has already been scaled._
 
-N.B. You may get comments from ternsorflow regarding your kernel and runtime. These are completely normal and are informattive comments, rather than warnings.
+N.B. You may get comments from keras/ternsorflow regarding your kernel and runtime. These are completely normal and are informative comments, rather than warnings.
 
 
 ```python
