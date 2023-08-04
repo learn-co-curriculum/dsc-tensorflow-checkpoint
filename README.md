@@ -4,6 +4,8 @@ This assessment covers building and training a `tf.keras` `Sequential` model, th
 
 _You can assume that the dataset has already been scaled._
 
+N.B. You may get comments from ternsorflow regarding your kernel and runtime. These are completely normal and are informattive comments, rather than warnings.
+
 
 ```python
 # Run this cell without changes
@@ -43,21 +45,22 @@ None
 X = None
 y = None
 
-# your code here
-raise NotImplementedError
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2021)
-X_train.shape
+# Test/train split (set the random state to 2021) and check the X_Train shape
+None
 ```
 
 
 ```python
+# Run this code block without any changes
+
+# Assert
+
 assert type(df) == pd.DataFrame
 assert type(X) == pd.DataFrame
 assert type(y) == pd.Series
 
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
+assert X_train.shape == (187, 300)
+assert y_train.shape == (187,)
 ```
 
 ## 2) Instantiate a `Sequential` Model
@@ -69,19 +72,20 @@ In the cell below, create an instance of a `Sequential` model ([documentation he
 
 ```python
 # Replace None with appropriate code
-dense_model = None
-# your code here
-raise NotImplementedError
 
-dense_model.name
+dense_model = None
 ```
 
 
 ```python
-# Model should not have any layers yet
+# Run this code without change
+
+# Assert
+
 assert len(dense_model.layers) == 0
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
+assert type(dense_model) == Sequential
+assert dense_model.name == "dense"
+
 ```
 
 ## 3) Determine Input and Output Shapes
@@ -93,19 +97,35 @@ Feel free to explore the attributes of `X` and `y` to determine this answer, or 
 
 ```python
 # Replace None with appropriate code
+
 num_input_nodes = None
 num_output_nodes = None
-# your code here
-raise NotImplementedError
 ```
 
 
 ```python
+# Run this code without change
+
 # Both values should be integers
 assert type(num_input_nodes) == int
 assert type(num_output_nodes) == int
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
+
+score = 0
+
+# 300 features, so 300 input nodes
+if num_input_nodes == 300:
+    score += 0.5
+    
+# binary output, so 1 output node
+if num_output_nodes == 1:
+    score += 0.5
+elif num_output_nodes == 2:
+    # Partial credit for this answer, since it's technically
+    # possible to use 2 output nodes for this, although it's
+    # confusingly redundant
+    score += 0.25
+
+score
 ```
 
 The code below will use the input and output shapes you specified to add `Dense` layers to the model:
@@ -138,17 +158,24 @@ We'll simplify the problem by specifying that you should use the string identifi
 
 ```python
 # Replace None with appropriate code
+
 activation_function = None
-# your code here
-raise NotImplementedError
 ```
 
 
 ```python
+# Run this cell without changes
+
 # activation_function should be a string
 assert type(activation_function) == str
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
+
+if num_output_nodes == 1:
+    assert activation_function == "sigmoid"
+else:
+    # The number of output nodes _should_ be 1, but we'll
+    # give credit for a matching function even if the
+    # previous answer was incorrect
+    assert activation_function == "softmax"
 ```
 
 Now we'll use that information to finalize the model.
@@ -180,18 +207,18 @@ dense_model.summary()
 
 
 ```python
-# Run this cell without changes
+# Replace None as necessary
 
 # Fit the model to the training data, using a subset of the
 # training data as validation data
 dense_model_results = dense_model.fit(
-    x=X_train,
-    y=y_train,
+    x=None,
+    y=None,
     batch_size=None,
-    epochs=20,
-    verbose=1,
+    epochs=None,
+    verbose=None,
     validation_split=0.4,
-    shuffle=False
+    shuffle=None
 )
 ```
 
@@ -244,6 +271,8 @@ Hint: these might be helpful
 
 
 ```python
+# Complete the following code
+
 def build_model_with_regularization(n_input, n_output, activation, loss):
     """
     Creates and compiles a tf.keras Sequential model with two hidden layers
@@ -256,12 +285,10 @@ def build_model_with_regularization(n_input, n_output, activation, loss):
     classifier.add(Dense(units=64, input_shape=(n_input,)))
 
     # add hidden layers
-    
-    # your code here
-    raise NotImplementedError
+
 
     # add output layer
-    classifier.add(Dense(units=n_output, activation=activation))
+
 
     classifier.compile(optimizer='adam', loss=loss, metrics=['accuracy'])
     return classifier
@@ -274,11 +301,32 @@ model_with_regularization.summary()
 
 
 ```python
+# Run the code below without change
+
 # Testing function to build model
 assert type(model_with_regularization) == Sequential
 
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
+def check_regularization(model):
+    regularization_count = 0
+    for layer in model.get_config()['layers']:
+        
+        # Checking if kernel regularizer was specified
+        if 'kernel_regularizer' in layer['config']:
+            if layer['config'].get('kernel_regularizer'):
+                regularization_count += 1
+                
+        # Checking if layer is dropout layer
+        if layer["class_name"] == "Dropout":
+            regularization_count += 1
+            
+    return regularization_count > 0
+    
+score = .3
+
+if check_regularization(model_with_regularization):
+    score += .7
+    
+score
 ```
 
 Now we'll evaluate the new model on the training set as well:
@@ -323,16 +371,20 @@ final_dense_model_results = dense_model.fit(
 plot_loss_and_accuracy(final_dense_model_results, final=True)
 ```
 
+Plot the loss and accuracy your final regularized model.
+
 
 ```python
+# Replace None, as necessary
+
 final_reg_model_results = model_with_regularization.fit(
-    x=X_train,
-    y=y_train,
+    x=None,
+    y=None,
     batch_size=None,
-    epochs=20,
-    verbose=0,
-    validation_data=(X_test, y_test),
-    shuffle=False
+    epochs=None,
+    verbose=None,
+    validation_data=(None, None),
+    shuffle=None
 )
 
 plot_loss_and_accuracy(final_reg_model_results, final=True)
