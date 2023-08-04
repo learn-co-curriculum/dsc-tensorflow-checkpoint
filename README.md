@@ -4,9 +4,10 @@ This assessment covers building and training a `tf.keras` `Sequential` model, th
 
 _You can assume that the dataset has already been scaled._
 
+N.B. You may get comments from ternsorflow regarding your kernel and runtime. These are completely normal and are informattive comments, rather than warnings.
+
 
 ```python
-# Run this cell without changes
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -31,26 +32,18 @@ from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 
 ```python
-# Replace None with appropriate code
 
 # Read in the data
-df = None
+df = pd.read_csv("data.csv")
 
 # Drop the "id" column
-None
-
-# Separate into X and y
-X = None
-y = None
-
-### BEGIN SOLUTION
-df = pd.read_csv("data.csv")
 df.drop("id", axis=1, inplace=True)
 
+# Separate into X and y
 X = df.drop("target", axis=1)
 y = df["target"]
-### END SOLUTION
 
+# Test/train split (set the random state to 2021) and check the X_Train shape
 X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=2021)
 X_train.shape
 ```
@@ -64,16 +57,15 @@ X_train.shape
 
 
 ```python
+
+# Assert
+
 assert type(df) == pd.DataFrame
 assert type(X) == pd.DataFrame
 assert type(y) == pd.Series
 
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
-### BEGIN HIDDEN TESTS
 assert X_train.shape == (187, 300)
 assert y_train.shape == (187,)
-### END HIDDEN TESTS
 ```
 
 ## 2) Instantiate a `Sequential` Model
@@ -84,36 +76,25 @@ In the cell below, create an instance of a `Sequential` model ([documentation he
 
 
 ```python
-# Replace None with appropriate code
-dense_model = None
-### BEGIN SOLUTION
-dense_model = Sequential(name="dense")
-### END SOLUTION
 
-dense_model.name
+dense_model = Sequential(name="dense")
 ```
 
-    2021-11-12 18:19:26.034361: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
-    To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+    Metal device set to: Apple M1 Pro
 
 
-
-
-
-    'dense'
-
+    2023-08-04 13:01:13.542446: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:305] Could not identify NUMA node of platform GPU ID 0, defaulting to 0. Your kernel may not have been built with NUMA support.
+    2023-08-04 13:01:13.542894: I tensorflow/core/common_runtime/pluggable_device/pluggable_device_factory.cc:271] Created TensorFlow device (/job:localhost/replica:0/task:0/device:GPU:0 with 0 MB memory) -> physical PluggableDevice (device: 0, name: METAL, pci bus id: <undefined>)
 
 
 
 ```python
-# Model should not have any layers yet
+
+# Assert
+
 assert len(dense_model.layers) == 0
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
-### BEGIN HIDDEN TESTS
 assert type(dense_model) == Sequential
 assert dense_model.name == "dense"
-### END HIDDEN TESTS
 ```
 
 ## 3) Determine Input and Output Shapes
@@ -124,25 +105,20 @@ Feel free to explore the attributes of `X` and `y` to determine this answer, or 
 
 
 ```python
-# Replace None with appropriate code
-num_input_nodes = None
-num_output_nodes = None
-### BEGIN SOLUTION
+
 # The number of input nodes is the number of features
 num_input_nodes = X.shape[1]
 # For a binary classification task, we only need 1 output node
 num_output_nodes = 1
-### END SOLUTION
 ```
 
 
 ```python
+
 # Both values should be integers
 assert type(num_input_nodes) == int
 assert type(num_output_nodes) == int
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
-### BEGIN HIDDEN TESTS
+
 score = 0
 
 # 300 features, so 300 input nodes
@@ -159,7 +135,6 @@ elif num_output_nodes == 2:
     score += 0.25
 
 score
-### END HIDDEN TESTS
 ```
 
 
@@ -173,7 +148,6 @@ The code below will use the input and output shapes you specified to add `Dense`
 
 
 ```python
-# Run this cell without changes
 
 # Add input layer
 dense_model.add(Dense(units=64, input_shape=(num_input_nodes,)))
@@ -188,9 +162,9 @@ dense_model.layers
 
 
 
-    [<keras.layers.core.Dense at 0x10b107520>,
-     <keras.layers.core.Dense at 0x10b107d30>,
-     <keras.layers.core.Dense at 0x10bc43bb0>]
+    [<keras.layers.core.dense.Dense at 0x16209f850>,
+     <keras.layers.core.dense.Dense at 0x162048af0>,
+     <keras.layers.core.dense.Dense at 0x15212da30>]
 
 
 
@@ -207,20 +181,17 @@ We'll simplify the problem by specifying that you should use the string identifi
 
 
 ```python
-# Replace None with appropriate code
-activation_function = None
-### BEGIN SOLUTION
+
+# sigmoid
 activation_function = "sigmoid"
-### END SOLUTION
 ```
 
 
 ```python
+
 # activation_function should be a string
 assert type(activation_function) == str
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
-### BEGIN HIDDEN TESTS
+
 if num_output_nodes == 1:
     assert activation_function == "sigmoid"
 else:
@@ -228,7 +199,6 @@ else:
     # give credit for a matching function even if the
     # previous answer was incorrect
     assert activation_function == "softmax"
-### END HIDDEN TESTS
 ```
 
 Now we'll use that information to finalize the model.
@@ -237,7 +207,6 @@ If this code produces an error, consider restarting the kernel and re-running th
 
 
 ```python
-# Run this cell without changes
 
 # Add output layer
 dense_model.add(Dense(units=num_output_nodes, activation=activation_function))
@@ -260,15 +229,16 @@ dense_model.summary()
 
     Model: "dense"
     _________________________________________________________________
-    Layer (type)                 Output Shape              Param #   
+     Layer (type)                Output Shape              Param #   
     =================================================================
-    dense (Dense)                (None, 64)                19264     
-    _________________________________________________________________
-    dense_1 (Dense)              (None, 64)                4160      
-    _________________________________________________________________
-    dense_2 (Dense)              (None, 64)                4160      
-    _________________________________________________________________
-    dense_3 (Dense)              (None, 1)                 65        
+     dense (Dense)               (None, 64)                19264     
+                                                                     
+     dense_1 (Dense)             (None, 64)                4160      
+                                                                     
+     dense_2 (Dense)             (None, 64)                4160      
+                                                                     
+     dense_3 (Dense)             (None, 1)                 65        
+                                                                     
     =================================================================
     Total params: 27,649
     Trainable params: 27,649
@@ -278,7 +248,6 @@ dense_model.summary()
 
 
 ```python
-# Run this cell without changes
 
 # Fit the model to the training data, using a subset of the
 # training data as validation data
@@ -296,53 +265,58 @@ dense_model_results = dense_model.fit(
     Epoch 1/20
 
 
-    2021-11-12 18:19:26.402632: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:185] None of the MLIR Optimization Passes are enabled (registered 2)
+    2023-08-04 13:02:16.373291: W tensorflow/core/platform/profile_utils/cpu_utils.cc:128] Failed to get CPU frequency: 0 Hz
+    2023-08-04 13:02:16.503351: I tensorflow/core/grappler/optimizers/custom_graph_optimizer_registry.cc:113] Plugin optimizer for device_type GPU is enabled.
 
 
-    4/4 [==============================] - 1s 92ms/step - loss: 0.9397 - accuracy: 0.5000 - val_loss: 0.7361 - val_accuracy: 0.5467
+    4/4 [==============================] - 1s 81ms/step - loss: 0.9172 - accuracy: 0.5893 - val_loss: 0.9539 - val_accuracy: 0.5600
     Epoch 2/20
-    4/4 [==============================] - 0s 19ms/step - loss: 0.4995 - accuracy: 0.8125 - val_loss: 0.6921 - val_accuracy: 0.5733
+    4/4 [==============================] - 0s 16ms/step - loss: 0.4043 - accuracy: 0.8036 - val_loss: 0.9276 - val_accuracy: 0.5733
     Epoch 3/20
-    4/4 [==============================] - 0s 20ms/step - loss: 0.3541 - accuracy: 0.9196 - val_loss: 0.6917 - val_accuracy: 0.5200
+    1/4 [======>.......................] - ETA: 0s - loss: 0.1492 - accuracy: 1.0000
+
+    2023-08-04 13:02:16.824131: I tensorflow/core/grappler/optimizers/custom_graph_optimizer_registry.cc:113] Plugin optimizer for device_type GPU is enabled.
+
+
+    4/4 [==============================] - 0s 15ms/step - loss: 0.2300 - accuracy: 0.9375 - val_loss: 0.9474 - val_accuracy: 0.6267
     Epoch 4/20
-    4/4 [==============================] - 0s 14ms/step - loss: 0.2572 - accuracy: 0.9464 - val_loss: 0.7127 - val_accuracy: 0.5733
+    4/4 [==============================] - 0s 15ms/step - loss: 0.1493 - accuracy: 0.9732 - val_loss: 0.9921 - val_accuracy: 0.6667
     Epoch 5/20
-    4/4 [==============================] - 0s 12ms/step - loss: 0.1746 - accuracy: 0.9732 - val_loss: 0.7566 - val_accuracy: 0.5467
+    4/4 [==============================] - 0s 14ms/step - loss: 0.0983 - accuracy: 0.9821 - val_loss: 1.0534 - val_accuracy: 0.6400
     Epoch 6/20
-    4/4 [==============================] - 0s 18ms/step - loss: 0.1103 - accuracy: 0.9821 - val_loss: 0.8243 - val_accuracy: 0.5467
+    4/4 [==============================] - 0s 16ms/step - loss: 0.0612 - accuracy: 1.0000 - val_loss: 1.1272 - val_accuracy: 0.6533
     Epoch 7/20
-    4/4 [==============================] - 0s 27ms/step - loss: 0.0641 - accuracy: 0.9911 - val_loss: 0.9095 - val_accuracy: 0.5733
+    4/4 [==============================] - 0s 16ms/step - loss: 0.0364 - accuracy: 1.0000 - val_loss: 1.2082 - val_accuracy: 0.6267
     Epoch 8/20
-    4/4 [==============================] - 0s 19ms/step - loss: 0.0344 - accuracy: 1.0000 - val_loss: 1.0023 - val_accuracy: 0.5867
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0220 - accuracy: 1.0000 - val_loss: 1.2890 - val_accuracy: 0.6400
     Epoch 9/20
-    4/4 [==============================] - 0s 17ms/step - loss: 0.0188 - accuracy: 1.0000 - val_loss: 1.0929 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0139 - accuracy: 1.0000 - val_loss: 1.3638 - val_accuracy: 0.6267
     Epoch 10/20
-    4/4 [==============================] - 0s 28ms/step - loss: 0.0111 - accuracy: 1.0000 - val_loss: 1.1749 - val_accuracy: 0.6267
+    4/4 [==============================] - 0s 16ms/step - loss: 0.0093 - accuracy: 1.0000 - val_loss: 1.4296 - val_accuracy: 0.6267
     Epoch 11/20
-    4/4 [==============================] - 0s 15ms/step - loss: 0.0071 - accuracy: 1.0000 - val_loss: 1.2458 - val_accuracy: 0.6267
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0065 - accuracy: 1.0000 - val_loss: 1.4858 - val_accuracy: 0.6267
     Epoch 12/20
-    4/4 [==============================] - 0s 16ms/step - loss: 0.0049 - accuracy: 1.0000 - val_loss: 1.3051 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0047 - accuracy: 1.0000 - val_loss: 1.5328 - val_accuracy: 0.6267
     Epoch 13/20
-    4/4 [==============================] - 0s 18ms/step - loss: 0.0036 - accuracy: 1.0000 - val_loss: 1.3538 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0036 - accuracy: 1.0000 - val_loss: 1.5720 - val_accuracy: 0.6267
     Epoch 14/20
-    4/4 [==============================] - 0s 26ms/step - loss: 0.0028 - accuracy: 1.0000 - val_loss: 1.3937 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 14ms/step - loss: 0.0029 - accuracy: 1.0000 - val_loss: 1.6047 - val_accuracy: 0.6400
     Epoch 15/20
-    4/4 [==============================] - 0s 28ms/step - loss: 0.0023 - accuracy: 1.0000 - val_loss: 1.4263 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0024 - accuracy: 1.0000 - val_loss: 1.6321 - val_accuracy: 0.6400
     Epoch 16/20
-    4/4 [==============================] - 0s 13ms/step - loss: 0.0020 - accuracy: 1.0000 - val_loss: 1.4534 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 14ms/step - loss: 0.0020 - accuracy: 1.0000 - val_loss: 1.6555 - val_accuracy: 0.6400
     Epoch 17/20
-    4/4 [==============================] - 0s 16ms/step - loss: 0.0017 - accuracy: 1.0000 - val_loss: 1.4760 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 14ms/step - loss: 0.0018 - accuracy: 1.0000 - val_loss: 1.6757 - val_accuracy: 0.6400
     Epoch 18/20
-    4/4 [==============================] - 0s 16ms/step - loss: 0.0015 - accuracy: 1.0000 - val_loss: 1.4954 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 14ms/step - loss: 0.0016 - accuracy: 1.0000 - val_loss: 1.6935 - val_accuracy: 0.6400
     Epoch 19/20
-    4/4 [==============================] - 0s 16ms/step - loss: 0.0014 - accuracy: 1.0000 - val_loss: 1.5122 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 15ms/step - loss: 0.0014 - accuracy: 1.0000 - val_loss: 1.7095 - val_accuracy: 0.6400
     Epoch 20/20
-    4/4 [==============================] - 0s 15ms/step - loss: 0.0012 - accuracy: 1.0000 - val_loss: 1.5271 - val_accuracy: 0.6133
+    4/4 [==============================] - 0s 14ms/step - loss: 0.0013 - accuracy: 1.0000 - val_loss: 1.7240 - val_accuracy: 0.6400
 
 
 
 ```python
-# Run this cell without changes
 
 def plot_loss_and_accuracy(results, final=False):
     
@@ -395,6 +369,7 @@ Hint: these might be helpful
 
 
 ```python
+
 def build_model_with_regularization(n_input, n_output, activation, loss):
     """
     Creates and compiles a tf.keras Sequential model with two hidden layers
@@ -432,17 +407,18 @@ model_with_regularization.summary()
 
     Model: "regularized"
     _________________________________________________________________
-    Layer (type)                 Output Shape              Param #   
+     Layer (type)                Output Shape              Param #   
     =================================================================
-    dense_4 (Dense)              (None, 64)                19264     
-    _________________________________________________________________
-    dense_5 (Dense)              (None, 64)                4160      
-    _________________________________________________________________
-    dropout (Dropout)            (None, 64)                0         
-    _________________________________________________________________
-    dense_6 (Dense)              (None, 64)                4160      
-    _________________________________________________________________
-    dense_7 (Dense)              (None, 1)                 65        
+     dense_4 (Dense)             (None, 64)                19264     
+                                                                     
+     dense_5 (Dense)             (None, 64)                4160      
+                                                                     
+     dropout (Dropout)           (None, 64)                0         
+                                                                     
+     dense_6 (Dense)             (None, 64)                4160      
+                                                                     
+     dense_7 (Dense)             (None, 1)                 65        
+                                                                     
     =================================================================
     Total params: 27,649
     Trainable params: 27,649
@@ -452,12 +428,10 @@ model_with_regularization.summary()
 
 
 ```python
+
 # Testing function to build model
 assert type(model_with_regularization) == Sequential
 
-# PUT ALL WORK FOR THE ABOVE QUESTION ABOVE THIS CELL
-# THIS UNALTERABLE CELL CONTAINS HIDDEN TESTS
-### BEGIN HIDDEN TESTS
 def check_regularization(model):
     regularization_count = 0
     for layer in model.get_config()['layers']:
@@ -479,7 +453,6 @@ if check_regularization(model_with_regularization):
     score += .7
     
 score
-### END HIDDEN TESTS
 ```
 
 
@@ -493,7 +466,6 @@ Now we'll evaluate the new model on the training set as well:
 
 
 ```python
-# Run this cell without changes
 
 # Fit the model to the training data, using a subset of the
 # training data as validation data
@@ -510,9 +482,13 @@ reg_model_results = model_with_regularization.fit(
 plot_loss_and_accuracy(reg_model_results)
 ```
 
+    2023-08-04 13:03:02.163324: I tensorflow/core/grappler/optimizers/custom_graph_optimizer_registry.cc:113] Plugin optimizer for device_type GPU is enabled.
+    2023-08-04 13:03:02.455015: I tensorflow/core/grappler/optimizers/custom_graph_optimizer_registry.cc:113] Plugin optimizer for device_type GPU is enabled.
+
+
 
     
-![png](index_files/index_24_0.png)
+![png](index_files/index_24_1.png)
     
 
 
@@ -522,7 +498,6 @@ Now we evaluate both models on the holdout set:
 
 
 ```python
-# Run this cell without changes
 
 final_dense_model_results = dense_model.fit(
     x=X_train,
@@ -543,8 +518,13 @@ plot_loss_and_accuracy(final_dense_model_results, final=True)
     
 
 
+Plot the loss and accuracy your final regularized model.
+
 
 ```python
+
+# Loss and accuracy of final model
+
 final_reg_model_results = model_with_regularization.fit(
     x=X_train,
     y=y_train,
@@ -560,6 +540,6 @@ plot_loss_and_accuracy(final_reg_model_results, final=True)
 
 
     
-![png](index_files/index_27_0.png)
+![png](index_files/index_28_0.png)
     
 
